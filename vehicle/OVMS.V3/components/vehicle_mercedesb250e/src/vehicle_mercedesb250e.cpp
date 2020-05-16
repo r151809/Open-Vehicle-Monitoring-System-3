@@ -53,6 +53,7 @@ OvmsVehicleMercedesB250e::OvmsVehicleMercedesB250e()
   mt_mb_trip_reset        = MyMetrics.InitFloat("xmb.v.display.trip.reset", SM_STALE_MIN, 0, Kilometers);
   mt_mb_trip_start        = MyMetrics.InitFloat("xmb.v.display.trip.start", SM_STALE_MIN, 0, Kilometers);
   mt_mb_consumption_start = MyMetrics.InitFloat("xmb.v.display.consumption.start", SM_STALE_MIN, 0, WattHoursPK);
+  mt_mb_consumption_reset = MyMetrics.InitFloat("xmb.v.display.consumption.reset", SM_STALE_MIN, 0, WattHoursPK);
   mt_mb_eco_accel         = MyMetrics.InitFloat("xmb.v.display.accel", SM_STALE_MIN, 0, Percentage);
   mt_mb_eco_const         = MyMetrics.InitFloat("xmb.v.display.const", SM_STALE_MIN, 0, Percentage);
   mt_mb_eco_coast         = MyMetrics.InitFloat("xmb.v.display.coast", SM_STALE_MIN, 0, Percentage);
@@ -96,10 +97,11 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     }
   case 0x19F: // Speedo
     {
-      float speed = ( ((d[0]&0xf) << 8) + d[1] ) * 0.1; 
+      float speed = ( ((d[0]&0xf) << 8) + d[1] ) * 0.1;
       float odo   = ( (d[5] << 16) + (d[6] << 8) + (d[7]) ) * 0.1;
       StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
       StandardMetrics.ms_v_pos_odometer->SetValue(odo); // ODO km
+      // d3&d4 is a minute counter, 
       break;
     }
   case 0x203: // Wheel speeds
@@ -125,9 +127,31 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       StandardMetrics.ms_v_env_cabinsetpoint->SetValue((float)d[0]*0.1+10); // deg C
       // d[1] is right side set temp
       // d[4] ls nible, could be ms_v_env_cabinfan
-      // d[5] contain ms_v_env_cooling and heating, possibly separated for drive and park      
+      // d[5] contain ms_v_env_cooling (bit 7) and heating (bit 6), possibly separated for drive (lsb side) and park      
+      //StandardMetrics.ms_v_env_heating((d[5]>>6)&1);
       break;
-    }	
+    }
+  case 0x245: 
+    {
+      //  d[1:0] signed steering wheel angle
+      //  d[5:4] signed G
+      break;
+    }
+  case 0x283: 
+    {
+      //  d[4] * 0.5 - 40 could be Motor temp
+      break;
+    }
+    // 0x2C4 29:18, little endian, GPS 'west'
+  case 0x2EF: // 
+    {
+      //float bat_temp = d[4] * 0.5 - 40;
+      //StandardMetrics.ms_v_bat_temp->SetValue(bat_temp); // Just a guess
+      // StandardMetrics.ms_v_env_footbrake->SetValue( (bool)((d[3]>>7)&0x1)); // Friction brake
+      bool hb = (bool)((d[3]>>5)&0x1);
+      StandardMetrics.ms_v_env_handbrake->SetValue( hb ); // 
+      break;
+    }
   case 0x2FF: // TPMS
     {
       if (d[3] < 255)
@@ -143,10 +167,11 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   case 0x33D: // Momentary power
     {
       float power = d[4]-100; // Percents, +/- 100
-      power *= 1.32; // 132 is the total power promised by manufacturer
-      if (power < -50) 
-        power = -50; // I just guess that maximum recuperation would be 50kW, probably less
-      StandardMetrics.ms_v_bat_power->SetValue(power); // kW 
+      if (power > 0) 
+	power *= 1.32; // 132 is the total power promised by manufacturer
+      else
+	power *= 0.5; // I just guess that maximum recuperation would be 50kW, probably less
+      StandardMetrics.ms_v_bat_power->SetValue(power); // kW
       break;
     }	    
   case 0x34E:  // Distance Today , Distance since reset, scale is 0.1 km
@@ -160,23 +185,42 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     }      
   case 0x34F: // Range
     {
-      float consumption = (float)(d[0]&0x7)*256 + (float)d[1];
-      /* Consumption is really an average over trip_start distance. But we'll have to use
-         this until a better value is found */
+      int consumption = (d[0]&0x7)*256 + d[1];
       int range  = (d[6]&0x7)*256 + d[7]; // Car's estimate on remainging range
       if (range < 2047)
 	StandardMetrics.ms_v_bat_range_est->SetValue((float)range); // km
-      mt_mb_consumption_start->SetValue(consumption);
+      mt_mb_consumption_start->SetValue((float)consumption);
+      int consumption = (d[2]&0x7)*256 + d[3];
+      mt_mb_consumption_reset->SetValue((float)consumption);
+      /* The following metric is strong maybe. */
+      //      StandardMetrics.ms_v_charge_inprogress->SetValue( (bool)((d[5]>>1) & 1) );
       break;
     }
-  case 0x3eb: 
+  case 0x39F: // Car time now
     {
-      float consumption = (float)(d[0])*256 + (float)d[1];
+      // d0 hour
+      // d1 minutes
+      // d2 seconds
+      // d3 day
+      // d4 month
+      // d5 year (two digits)
+      break;
+    }
+    //case 0x3e7: // GPS
+  case 0x3eb: // GPS
+    {
+      // d[1:0]*0.0368 is speed 
+      // d[3:2] 12 bit is something odd 
+      // d[5:4] 12 bit *0.1 is maybe consumption average
+      // d[7:6] 12 bit *0.1 is maybe consumption average
+      
+      float gps_speed = (float)(d[0])*256 + (float)d[1]; // guess
       if (d[0] < 255) { // Update only with feasible results
-	StandardMetrics.ms_v_bat_consumption->SetValue(consumption*0.1); // Wh/km
+	StandardMetrics.ms_v_pos_gpsspeed->SetValue(gps_speed*0.0368); // kph
       }
       break;
     }
+    
   case 0x3F2: //Eco display
     {
       if (d[0] <= 200) { // Eco values show as 0xff when the car is switched on/off 

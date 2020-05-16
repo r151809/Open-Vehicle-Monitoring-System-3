@@ -46,6 +46,7 @@ class OvmsVehicleMercedesB250e : public OvmsVehicle
     OvmsMetricFloat *mt_mb_trip_reset;        // Distance since reset
     OvmsMetricFloat *mt_mb_trip_start;        // Distance since default trip started
     OvmsMetricFloat *mt_mb_consumption_start; // Consumption since default trip started
+    OvmsMetricFloat *mt_mb_consumption_reset; // Consumption since long time average reseted
     OvmsMetricFloat *mt_mb_eco_accel;         // eco score on acceleration over last 6 hours
     OvmsMetricFloat *mt_mb_eco_const;         // eco score on constant driving over last 6 hours
     OvmsMetricFloat *mt_mb_eco_coast;         // eco score on coasting over last 6 hours
