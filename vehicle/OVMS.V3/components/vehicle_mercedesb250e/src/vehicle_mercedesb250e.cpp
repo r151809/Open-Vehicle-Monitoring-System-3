@@ -172,6 +172,11 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       else
 	power *= 0.5; // I just guess that maximum recuperation would be 50kW, probably less
       StandardMetrics.ms_v_bat_power->SetValue(power); // kW
+      // d[5]&0xf 0x1: // casting
+      // d[5]&0xf 0x4: // full throttle
+      // d[5]&0xf 0x7: // normal throttle
+      // d[5]&0xf 0x8: // brake
+      // d[5]&0xf 0xa: // park
       break;
     }	    
   case 0x34E:  // Distance Today , Distance since reset, scale is 0.1 km
@@ -182,6 +187,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
 	mt_mb_trip_start->SetValue(trip_start * 0.1); 
       if (trip_reset < 0xfffffe) 
         mt_mb_trip_reset->SetValue(trip_reset * 0.1);
+      break;
     }      
   case 0x34F: // Range
     {
