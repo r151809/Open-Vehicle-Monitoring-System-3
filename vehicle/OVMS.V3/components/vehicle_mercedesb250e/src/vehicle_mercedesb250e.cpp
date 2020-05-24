@@ -88,6 +88,10 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   uint8_t *d = p_frame->data.u8;
    
   switch (p_frame->MsgID) {
+    // case 0x4B: // d[4]&0x40 preheat button: 0x04B 01 01 0C 46 FF 04 
+    // case 0x4B: // d[3]&0x80 range plus button: 0x04B 01 01 8C 06 FF 04 
+    // case 0x73: // d[4]*0.1 Aux battery voltage, same as 0x203 d[1]*0.1
+
   case 0x105: // Motor RPM
     {
       int rpm = ((d[0]&0x3f) << 8) + d[1]; 
@@ -101,7 +105,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       float odo   = ( (d[5] << 16) + (d[6] << 8) + (d[7]) ) * 0.1;
       StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
       StandardMetrics.ms_v_pos_odometer->SetValue(odo); // ODO km
-      // d3&d4 is a minute counter, 
+      // d3&d4 is a minute counter,
+      // d2 *0.5 - 40 could be outdoor temp 
       break;
     }
   case 0x203: // Wheel speeds
@@ -128,7 +133,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       // d[1] is right side set temp
       // d[4] ls nible, could be ms_v_env_cabinfan
       // d[5] contain ms_v_env_cooling (bit 7) and heating (bit 6), possibly separated for drive (lsb side) and park      
-      //StandardMetrics.ms_v_env_heating((d[5]>>6)&1);
+      StandardMetrics.ms_v_env_heating->SetValue( (d[5]>>6)&1 );
+      StandardMetrics.ms_v_env_cooling->SetValue( (d[5]>>7)&1 );
       break;
     }
   case 0x245: 
@@ -196,11 +202,20 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       if (range < 2047)
 	StandardMetrics.ms_v_bat_range_est->SetValue((float)range); // km
       mt_mb_consumption_start->SetValue((float)consumption);
-      int consumption = (d[2]&0x7)*256 + d[3];
+      consumption = (d[2]&0x7)*256 + d[3];
       mt_mb_consumption_reset->SetValue((float)consumption);
       /* The following metric is strong maybe. */
       //      StandardMetrics.ms_v_charge_inprogress->SetValue( (bool)((d[5]>>1) & 1) );
       break;
+    }
+  case 0x37D:
+   {
+     int cur = (d[4]&0x3)*256+d[3];
+     if (cur & 0x200)
+       cur |= (-1 & ~0x1ff); // sign-extend
+     StandardMetrics.ms_v_env_charging12v->SetValue( (d[2]>>2)&0x1 );
+     StandardMetrics.ms_v_bat_12v_current->SetValue( cur * 0.1 );
+     break;
     }
   case 0x39F: // Car time now
     {

@@ -15,6 +15,10 @@ ms_v_bat_range_est
 ms_v_bat_consumption          Instantious consumption, Wh/km
 ms_v_tpms_*_p
 ms_v_env_cabinsetpoint        There are two figures, left and right. Using just one for now.
+ms_v_env_charging12v
+ms_v_bat_12v_current          Scaling is not verified. It's signed 10 bits, and scaling is guessed to 0.1A
+ms_v_env_heating              Heater or heating on, in preheat mode (may differ when the car is on)
+ms_v_env_cooling              Cooling on, in preheat mode (may differ when the car is on)
 ============================= ============================================
 
 
