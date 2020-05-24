@@ -106,7 +106,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
       StandardMetrics.ms_v_pos_odometer->SetValue(odo); // ODO km
       // d3&d4 is a minute counter,
-      // d2 *0.5 - 40 could be outdoor temp 
+      // d2 *0.5 - 40 could be outdoor temp
+      StandardMetrics.ms_v_env_temp->SetValue( (d[2]-80)*0.5 );
       break;
     }
   case 0x203: // Wheel speeds
@@ -174,9 +175,10 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     {
       float power = d[4]-100; // Percents, +/- 100
       if (power > 0) 
-	power *= 1.32; // 132 is the total power promised by manufacturer
+	power *= 1.32; // 132 kW is the total power promised by manufacturer
       else
-	power *= 0.5; // I just guess that maximum recuperation would be 50kW, probably less
+	power *= 0.4; // guess that maximum recuperation would be ~40 kW
+        // See https://avt.inl.gov/sites/default/files/pdf/fsev/fact2015mercedesbclass.pdf
       StandardMetrics.ms_v_bat_power->SetValue(power); // kW
       // d[5]&0xf 0x1: // casting
       // d[5]&0xf 0x4: // full throttle
