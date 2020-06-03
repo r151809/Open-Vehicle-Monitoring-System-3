@@ -88,10 +88,10 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   uint8_t *d = p_frame->data.u8;
    
   switch (p_frame->MsgID) {
-    // case 0x4B: // d[4]&0x40 preheat button: 0x04B 01 01 0C 46 FF 04 
-    // case 0x4B: // d[3]&0x80 range plus button: 0x04B 01 01 8C 06 FF 04 
-    // case 0x73: // d[4]*0.1 Aux battery voltage, same as 0x203 d[1]*0.1
-
+    // case 0x4B: // d[3]&0x40 preheat button: 0x04B 01 01 0C 46 FF 04 
+    // case 0x4B: // d[2]&0x80 range plus button: 0x04B 01 01 8C 06 FF 04 
+    // case 0x73: // d[4]*0.1 Aux battery voltage, same as 0x205 d[1]*0.1, except 0x73 has 10x sample rate, and value 0xff should be ignored
+    // case 0xff: // d[1].bit4 car on or similar, bits 0-2 tell something about startup
   case 0x105: // Motor RPM
     {
       int rpm = ((d[0]&0x3f) << 8) + d[1]; 
@@ -152,8 +152,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     // 0x2C4 29:18, little endian, GPS 'west'
   case 0x2EF: // 
     {
-      //float bat_temp = d[4] * 0.5 - 40;
-      //StandardMetrics.ms_v_bat_temp->SetValue(bat_temp); // Just a guess
+      int temp = d[4] - 40;
+      StandardMetrics.ms_v_bat_temp->SetValue(temp); // Probably water temp
       // StandardMetrics.ms_v_env_footbrake->SetValue( (bool)((d[3]>>7)&0x1)); // Friction brake
       bool hb = (bool)((d[3]>>5)&0x1);
       StandardMetrics.ms_v_env_handbrake->SetValue( hb ); // 
