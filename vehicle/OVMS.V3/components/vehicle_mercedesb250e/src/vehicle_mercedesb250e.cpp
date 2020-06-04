@@ -103,7 +103,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     {
       float speed = ( ((d[0]&0xf) << 8) + d[1] ) * 0.1;
       float odo   = ( (d[5] << 16) + (d[6] << 8) + (d[7]) ) * 0.1;
-      StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
+      if (speed < 180)
+        StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
       StandardMetrics.ms_v_pos_odometer->SetValue(odo); // ODO km
       // d3&d4 is a minute counter,
       // d2 *0.5 - 40 could be outdoor temp
@@ -153,7 +154,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   case 0x2EF: // 
     {
       int temp = d[4] - 40;
-      StandardMetrics.ms_v_bat_temp->SetValue(temp); // Probably water temp
+      StandardMetrics.ms_v_bat_temp->SetValue(temp/2); // Probably water or 12v battery temp, changes too fast for HV battery temp 
       // StandardMetrics.ms_v_env_footbrake->SetValue( (bool)((d[3]>>7)&0x1)); // Friction brake
       bool hb = (bool)((d[3]>>5)&0x1);
       StandardMetrics.ms_v_env_handbrake->SetValue( hb ); // 
@@ -200,7 +201,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   case 0x34F: // Range
     {
       int consumption = (d[0]&0x7)*256 + d[1];
-      int range  = (d[6]&0x7)*256 + d[7]; // Car's estimate on remainging range
+      int range       = (d[6]&0x7)*256 + d[7]; // Car's estimate on remainging range
+      int throttle    = (d[4]&0x1)*256 + d[5];
       if (range < 2047)
 	StandardMetrics.ms_v_bat_range_est->SetValue((float)range); // km
       mt_mb_consumption_start->SetValue((float)consumption);
@@ -208,6 +210,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       mt_mb_consumption_reset->SetValue((float)consumption);
       /* The following metric is strong maybe. */
       //      StandardMetrics.ms_v_charge_inprogress->SetValue( (bool)((d[5]>>1) & 1) );
+      StandardMetrics.ms_v_env_throttle->SetValue( throttle*100/511 );
       break;
     }
   case 0x37D:

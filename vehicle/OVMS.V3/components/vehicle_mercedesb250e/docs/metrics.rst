@@ -10,7 +10,7 @@ ms_v_env_throttle             Resolution of 0.4 %
 ms_v_pos_speed                Resolution of 0.1 km/h
 ms_v_pos_odometer             Resolution of 0.1 km
 ms_v_bat_12v_voltage          Resolution of 0.1 V
-ms_v_bat_power                Car reports percents, so the kW is just calculated by multiplying by 132 kW. Negative side is scaled to -40 kW. This is based on these measurements: https://avt.inl.gov/sites/default/files/pdf/fsev/fact2015mercedesbclass.pdf
+ms_v_bat_power                Engine power (heating is excluded from this value). Car reports percents, so the kW is just calculated by multiplying by 132 kW. Negative side is scaled to -40 kW. This is based on these measurements: https://avt.inl.gov/sites/default/files/pdf/fsev/fact2015mercedesbclass.pdf 
 ms_v_bat_range_est
 ms_v_bat_consumption          Instantious consumption, Wh/km
 ms_v_tpms_*_p
@@ -21,6 +21,7 @@ ms_v_env_heating              Heater or heating on, in preheat mode (may differ 
 ms_v_env_cooling              Cooling on, in preheat mode (may differ when the car is on)
 ms_v_env_temp                 Environment temperature (guessing, could be some other temp also)
 ms_v_bat_temp                 This is probably liquid temperature rather than actual battery temp.
+ms_v_env_throttle             Throttle position (also cruise uses this) - drive mode effect on this is still unknown
 ============================= ============================================
 
 
