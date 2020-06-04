@@ -62,6 +62,9 @@ OvmsVehicleMercedesB250e::OvmsVehicleMercedesB250e()
   mt_mb_fr_speed          = MyMetrics.InitFloat("xmb.v.fr_speed", SM_STALE_MIN, 0, Kph);
   mt_mb_rl_speed          = MyMetrics.InitFloat("xmb.v.rl_speed", SM_STALE_MIN, 0, Kph);
   mt_mb_rr_speed          = MyMetrics.InitFloat("xmb.v.rr_speed", SM_STALE_MIN, 0, Kph);
+  mt_mb_steering_wheel    = MyMetrics.InitFloat("xmb.v.steering_wheel", SM_STALE_MIN, 0, Other);
+  mt_mb_forward_g         = MyMetrics.InitFloat("xmb.v.forward_g", SM_STALE_MIN, 0, Other);
+  mt_mb_side_g            = MyMetrics.InitFloat("xmb.v.side_g", SM_STALE_MIN, 0, Other);
   
   RegisterCanBus(1, CAN_MODE_ACTIVE, CAN_SPEED_500KBPS);
 }
@@ -139,15 +142,37 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       StandardMetrics.ms_v_env_cooling->SetValue( (d[5]>>7)&1 );
       break;
     }
-  case 0x245: 
+  case 0x245: // Steering
     {
-      //  d[1:0] signed steering wheel angle
-      //  d[5:4] signed G
+      int steering = 0;
+      // It's valid if msb != second msb
+      if (d[0]>>8 != (d[0]>>7&1)) {
+        //  d[1:0] signed steering wheel angle
+        steering = (d[0]&0x7f) * 256 + d[1];
+        if (d[0]>>7&1)
+          steering |= 0xffff8000; // extend the sign bit
+        mt_mb_steering_wheel->SetValue(steering/2^14); // +/- 1.0
+      }
+      int g = d[4];
+      // It's valid if msb != second msb
+      if ( g != 255 ) {
+        g -= 128;
+        mt_mb_forward_g->SetValue(g); // km/h alread
+      }
+      g = d[5];
+      // It's valid if msb != second msb
+      if ( g != 255 ) {
+        g -= 128;
+        mt_mb_side_g->SetValue(g); // km/h alread
+      }
+
       break;
     }
   case 0x283: 
     {
-      //  d[4] * 0.5 - 40 could be Motor temp
+      //  d[5] * 0.5 - 20 could be Motor temp
+      int temp = d[5] - 40;
+      StandardMetrics.ms_v_mot_temp->SetValue(temp/2); // Probably water or 12v battery temp, does not change much on highway 
       break;
     }
     // 0x2C4 29:18, little endian, GPS 'west'

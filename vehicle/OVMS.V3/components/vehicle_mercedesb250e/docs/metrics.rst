@@ -44,4 +44,7 @@ xmb.v.fl_speed                           37.83 km/h               Front Left whe
 xmb.v.fr_speed                           37.85 km/h               Front Right wheel speed
 xmb.v.rl_speed                           37.80 km/h               Rear Left wheel speed
 xmb.v.rr_speed                           37.82 km/h               Rear Right wheel speed
+xmb.v.steering_wheel                     0.002                    Steering wheel angle, left side is positive
+xmb.v.forward_g                          0.02                     Forward (longitudal) accelration, range +/- 1.0 of maximum (what ever that is)..
+xmb.v.side_g                             0.02                     Turning accelration, range +/- 1.0 of maximum (what ever that is), left is positive side..
 ======================================== ======================== ============================================

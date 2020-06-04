@@ -56,7 +56,12 @@ class OvmsVehicleMercedesB250e : public OvmsVehicle
     OvmsMetricFloat *mt_mb_fr_speed;          // Front Right wheel speed, km/h
     OvmsMetricFloat *mt_mb_rl_speed;          // Rear  Left  wheel speed, km/h
     OvmsMetricFloat *mt_mb_rr_speed;          // Rear  Right wheel speed, km/h
-    
+
+    OvmsMetricFloat *mt_mb_steering_wheel;    // Steering wheel angle, 1.0 is max left and -1.0 is right
+
+    OvmsMetricFloat *mt_mb_forward_g;         // 1.0 is the max
+    OvmsMetricFloat *mt_mb_side_g;            // 1.0 is the max turn left
+
   };
 
 #endif //#ifndef __VEHICLE_MERCEDESB250E_H__
