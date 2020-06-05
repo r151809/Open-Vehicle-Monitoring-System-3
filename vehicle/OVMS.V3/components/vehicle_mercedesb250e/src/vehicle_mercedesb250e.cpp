@@ -146,10 +146,10 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     {
       int steering = 0;
       // It's valid if msb != second msb
-      if (d[0]>>8 != (d[0]>>7&1)) {
+      if (d[0]>>7 != (d[0]>>6&1)) {
         //  d[1:0] signed steering wheel angle
         steering = (d[0]&0x7f) * 256 + d[1];
-        if (d[0]>>7&1)
+        if (d[0]>>7 == 0) // msb is '1'
           steering |= ~0x7fff; // extend the sign bit
         mt_mb_steering_wheel->SetValue(steering/2^14); // +/- 1.0
       }
