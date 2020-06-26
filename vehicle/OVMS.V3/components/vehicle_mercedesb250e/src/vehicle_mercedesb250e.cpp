@@ -179,7 +179,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   case 0x2EF: // 
     {
       int temp = d[4] - 40;
-      StandardMetrics.ms_v_bat_temp->SetValue(temp/2); // Probably water or 12v battery temp, changes too fast for HV battery temp 
+      StandardMetrics.ms_v_bat_temp->SetValue(temp/2); // Probably water or 12v battery temp, changes too fast for HV battery temp, drops with ambient even when charging at 3x6A
       // StandardMetrics.ms_v_env_footbrake->SetValue( (bool)((d[3]>>7)&0x1)); // Friction brake
       bool hb = (bool)((d[3]>>5)&0x1);
       StandardMetrics.ms_v_env_handbrake->SetValue( hb ); // 
