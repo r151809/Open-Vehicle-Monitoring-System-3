@@ -120,7 +120,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       float fl_speed = ( ((d[0]&0xf) << 8) + d[1] ) * 0.0603504; 
       float fr_speed = ( ((d[2]&0xf) << 8) + d[3] ) * 0.0603504; 
       float rl_speed = ( ((d[4]&0xf) << 8) + d[5] ) * 0.0603504; 
-      float rr_speed = ( ((d[5]&0xf) << 8) + d[7] ) * 0.0603504; 
+      float rr_speed = ( ((d[6]&0xf) << 8) + d[7] ) * 0.0603504; 
       mt_mb_fl_speed->SetValue(fl_speed); // km/h alread
       mt_mb_fr_speed->SetValue(fr_speed); // km/h alread
       mt_mb_rl_speed->SetValue(rl_speed); // km/h alread
