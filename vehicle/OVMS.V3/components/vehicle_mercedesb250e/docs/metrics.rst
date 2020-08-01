@@ -47,4 +47,6 @@ xmb.v.rr_speed                           37.82 km/h               Rear Right whe
 xmb.v.steering_wheel                     0.002                    Steering wheel angle, left side is positive
 xmb.v.forward_g                          0.02                     Forward (longitudal) accelration, range +/- 1.0 of maximum (what ever that is)..
 xmb.v.side_g                             0.02                     Turning accelration, range +/- 1.0 of maximum (what ever that is), left is positive side..
+xmb.v.temperature1                       30 deg C                 Unknown temperature measurement
+xmb.v.temperature2                       30 deg C                 Unknown temperature measurement
 ======================================== ======================== ============================================

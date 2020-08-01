@@ -65,6 +65,8 @@ OvmsVehicleMercedesB250e::OvmsVehicleMercedesB250e()
   mt_mb_steering_wheel    = MyMetrics.InitFloat("xmb.v.steering_wheel", SM_STALE_MIN, 0, Other);
   mt_mb_forward_g         = MyMetrics.InitFloat("xmb.v.forward_g", SM_STALE_MIN, 0, Other);
   mt_mb_side_g            = MyMetrics.InitFloat("xmb.v.side_g", SM_STALE_MIN, 0, Other);
+  mt_mb_temperature1      = MyMetrics.InitFloat("xmb.v.temperature1", SM_STALE_MIN, 0, Celcius);
+  mt_mb_temperature2      = MyMetrics.InitFloat("xmb.v.temperature1", SM_STALE_MIN, 0, Celcius);
   
   RegisterCanBus(1, CAN_MODE_ACTIVE, CAN_SPEED_500KBPS);
 }
@@ -172,14 +174,14 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     {
       //  d[5] * 0.5 - 20 could be Motor temp
       int temp = d[5] - 40;
-      StandardMetrics.ms_v_mot_temp->SetValue(temp/2); // Probably water or 12v battery temp, does not change much on highway 
+      mt_mb_temperature1->SetValue(temp/2); // Probably water or 12v battery temp, does not change much on highway 
       break;
     }
     // 0x2C4 29:18, little endian, GPS 'west'
   case 0x2EF: // 
     {
       int temp = d[4] - 40;
-      StandardMetrics.ms_v_bat_temp->SetValue(temp/2); // Probably water or 12v battery temp, changes too fast for HV battery temp, drops with ambient even when charging at 3x6A
+      mt_mb_temperature2->SetValue(temp/2); // Probably water or 12v battery temp, changes too fast for HV battery temp, drops with ambient when charging at 3x6A
       // StandardMetrics.ms_v_env_footbrake->SetValue( (bool)((d[3]>>7)&0x1)); // Friction brake
       bool hb = (bool)((d[3]>>5)&0x1);
       StandardMetrics.ms_v_env_handbrake->SetValue( hb ); // 

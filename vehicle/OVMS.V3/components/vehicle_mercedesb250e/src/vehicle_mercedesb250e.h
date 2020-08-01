@@ -62,6 +62,9 @@ class OvmsVehicleMercedesB250e : public OvmsVehicle
     OvmsMetricFloat *mt_mb_forward_g;         // 1.0 is the max
     OvmsMetricFloat *mt_mb_side_g;            // 1.0 is the max turn left
 
+    OvmsMetricFloat *mt_mb_temperature1;      // deg C, unknown temperature sensor
+    OvmsMetricFloat *mt_mb_temperature2;      // deg C, unknown temperature sensor
+
   };
 
 #endif //#ifndef __VEHICLE_MERCEDESB250E_H__
