@@ -65,6 +65,8 @@ class OvmsVehicleMercedesB250e : public OvmsVehicle
     OvmsMetricFloat *mt_mb_temperature1;      // deg C, unknown temperature sensor
     OvmsMetricFloat *mt_mb_temperature2;      // deg C, unknown temperature sensor
 
+    char m_vin[18];
+ 
   };
 
 #endif //#ifndef __VEHICLE_MERCEDESB250E_H__

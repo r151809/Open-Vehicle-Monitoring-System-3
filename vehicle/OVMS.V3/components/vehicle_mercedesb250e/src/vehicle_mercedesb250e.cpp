@@ -67,7 +67,9 @@ OvmsVehicleMercedesB250e::OvmsVehicleMercedesB250e()
   mt_mb_side_g            = MyMetrics.InitFloat("xmb.v.side_g", SM_STALE_MIN, 0, Other);
   mt_mb_temperature1      = MyMetrics.InitFloat("xmb.v.temperature1", SM_STALE_MIN, 0, Celcius);
   mt_mb_temperature2      = MyMetrics.InitFloat("xmb.v.temperature1", SM_STALE_MIN, 0, Celcius);
-  
+
+  memset(m_vin,0,sizeof(m_vin));
+
   RegisterCanBus(1, CAN_MODE_ACTIVE, CAN_SPEED_500KBPS);
 }
 
@@ -129,6 +131,18 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       mt_mb_rr_speed->SetValue(rr_speed); // km/h alread
       break;
     }
+  case 0x204: // VIN. It's multiplexed with one MsgId: the first byte tells which part of the string is sent
+    {
+      if (d[0] < 2) {      
+        memcpy(m_vin+7*d[0],d+1,7);
+      }	else if (d[0] == 2) {      
+        if ((m_vin[0] != 0)&&(m_vin[7] != 0))
+          memcpy(m_vin+7*d[0],d+1,3);
+        m_vin[17] = 0;
+        StandardMetrics.ms_v_vin->SetValue(m_vin);
+      }	
+      break;
+    }	
   case 0x205: // 12V battery voltage
     {
       StandardMetrics.ms_v_bat_12v_voltage->SetValue((float)d[1]*0.1); // Volts
