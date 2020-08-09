@@ -20,7 +20,6 @@ ms_v_bat_12v_current          Scaling is not verified. It's signed 10 bits, and 
 ms_v_env_heating              Heater or heating on, in preheat mode (may differ when the car is on)
 ms_v_env_cooling              Cooling on, in preheat mode (may differ when the car is on)
 ms_v_env_temp                 Environment temperature (guessing, could be some other temp also)
-ms_v_bat_temp                 This is probably liquid temperature rather than actual battery temp.
 ms_v_env_throttle             Throttle position (also cruise uses this) - drive mode effect on this is still unknown
 ms_v_vin                      VIN
 ============================= ============================================
