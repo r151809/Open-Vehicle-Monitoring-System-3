@@ -108,13 +108,16 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     }
   case 0x19F: // Speedo
     {
+      // bit 4 : car is "off"
+      bool car_on = !((d[0] >> 4) & 1);
       float speed = ( ((d[0]&0xf) << 8) + d[1] ) * 0.1;
       float odo   = ( (d[5] << 16) + (d[6] << 8) + (d[7]) ) * 0.1;
+      StandardMetrics.ms_v_env_on->SetValue(car_on); 
       if (speed < 180)
         StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
       StandardMetrics.ms_v_pos_odometer->SetValue(odo); // ODO km
       // d3&d4 is a minute counter,
-      // d2 *0.5 - 40 could be outdoor temp
+      // d2 *0.5 - 40 is outdoor temp
       StandardMetrics.ms_v_env_temp->SetValue( (d[2]-80)*0.5 );
       break;
     }
@@ -147,7 +150,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     {
       StandardMetrics.ms_v_bat_12v_voltage->SetValue((float)d[1]*0.1); // Volts
       break;
-    }	
+    }
+    // 0x208, is fully static
   case 0x20B: // HVAC
     {
       StandardMetrics.ms_v_env_cabinsetpoint->SetValue((float)d[0]*0.1+10); // deg C
@@ -184,6 +188,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
 
       break;
     }
+    // 0x249 is some kind of multiplexed data. Static while charging    
   case 0x283: 
     {
       //  d[5] * 0.5 - 20 could be Motor temp
@@ -241,14 +246,16 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     }      
   case 0x34F: // Range
     {
-      int consumption = (d[0]&0x7)*256 + d[1];
+      int consumption = (d[0]&0x7)*256 + d[1]; // Since start
       int range       = (d[6]&0x7)*256 + d[7]; // Car's estimate on remainging range
       int throttle    = (d[4]&0x1)*256 + d[5];
       if (range < 2047)
 	StandardMetrics.ms_v_bat_range_est->SetValue((float)range); // km
-      mt_mb_consumption_start->SetValue((float)consumption);
+      if (consumption < 2047)
+        mt_mb_consumption_start->SetValue((float)consumption);
       consumption = (d[2]&0x7)*256 + d[3];
-      mt_mb_consumption_reset->SetValue((float)consumption);
+      if (consumption < 2047)
+        mt_mb_consumption_reset->SetValue((float)consumption);
       /* The following metric is strong maybe. */
       //      StandardMetrics.ms_v_charge_inprogress->SetValue( (bool)((d[5]>>1) & 1) );
       StandardMetrics.ms_v_env_throttle->SetValue( throttle*100/511 );
@@ -271,6 +278,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       // d3 day
       // d4 month
       // d5 year (two digits)
+      // StandardMetrics.ms_m_timeutc->SetValue(();
       break;
     }
     //case 0x3e7: // GPS

@@ -22,6 +22,7 @@ ms_v_env_cooling              Cooling on, in preheat mode (may differ when the c
 ms_v_env_temp                 Environment temperature (guessing, could be some other temp also)
 ms_v_env_throttle             Throttle position (also cruise uses this) - drive mode effect on this is still unknown
 ms_v_vin                      VIN
+ms_v_env_on                   "Ignition" state (drivable), not verified yet
 ============================= ============================================
 
 
