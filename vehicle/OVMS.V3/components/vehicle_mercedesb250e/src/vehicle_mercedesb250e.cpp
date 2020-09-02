@@ -66,8 +66,10 @@ OvmsVehicleMercedesB250e::OvmsVehicleMercedesB250e()
   mt_mb_forward_g         = MyMetrics.InitFloat("xmb.v.forward_g", SM_STALE_MIN, 0, Other);
   mt_mb_side_g            = MyMetrics.InitFloat("xmb.v.side_g", SM_STALE_MIN, 0, Other);
   mt_mb_temperature1      = MyMetrics.InitFloat("xmb.v.temperature1", SM_STALE_MIN, 0, Celcius);
-  mt_mb_temperature2      = MyMetrics.InitFloat("xmb.v.temperature1", SM_STALE_MIN, 0, Celcius);
-
+  mt_mb_temperature2      = MyMetrics.InitFloat("xmb.v.temperature2", SM_STALE_MIN, 0, Celcius);
+  mt_mb_temperature3      = MyMetrics.InitFloat("xmb.v.temperature3", SM_STALE_MIN, 0, Celcius);
+  mt_mb_drive_pedal_slow  = MyMetrics.InitFloat("xmb.v.drive_pedal_slow", SM_STALE_MIN, 0, Percentage);
+  
   memset(m_vin,0,sizeof(m_vin));
 
   RegisterCanBus(1, CAN_MODE_ACTIVE, CAN_SPEED_500KBPS);
@@ -95,15 +97,22 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
   uint8_t *d = p_frame->data.u8;
    
   switch (p_frame->MsgID) {
-    // case 0x4B: // d[3]&0x40 preheat button: 0x04B 01 01 0C 46 FF 04 
-    // case 0x4B: // d[2]&0x80 range plus button: 0x04B 01 01 8C 06 FF 04 
-    // case 0x73: // d[4]*0.1 Aux battery voltage, same as 0x205 d[1]*0.1, except 0x73 has 10x sample rate, and value 0xff should be ignored
-    // case 0xff: // d[1].bit4 car on or similar, bits 0-2 tell something about startup
+    // case 0x001: // d[0]&0x01f enum: 0, 6 driveable, 1 off command, 9&8 going off
+                   // d[1]&0x02 brake pedal, d[1]&0x4 power button
+                   // d[3]&0xf0 enum: 5 locked, a P-gear, 8 DNR-gear
+    // case 0x04B: // d[3]&0x40 preheat button: 0x04B 01 01 0C 46 FF 04 
+    // case 0x04B: // d[2]&0x80 range plus button: 0x04B 01 01 8C 06 FF 04 
+    // case 0x073: // d[4]*0.1 Aux battery voltage, same as 0x205 d[1]*0.1, except 0x73 has 10x sample rate, and value 0xff should be ignored
+                   // d[0] gear R, N, D, P
+                   // d[5] on-off
+    // case 0x0ff: // d[1].bit4 car on or similar, bits 0-2 tell something about startup
   case 0x105: // Motor RPM
     {
       int rpm = ((d[0]&0x3f) << 8) + d[1]; 
       StandardMetrics.ms_v_mot_rpm->SetValue(rpm); // RPM
-      StandardMetrics.ms_v_env_throttle->SetValue(d[4]/2.50); // Drive pedal state [%], raw values are from 0 to 250
+      mt_mb_drive_pedal_slow->SetValue(d[4]/2.50);  // Drive pedal [%], raw values are from 0 to 250
+      // D3 is engine throttle, while D4 is the pedal
+      mt_mb_drive_pedal_slow->SetValue(d[3]/2.50); 
       break;
     }
   case 0x19F: // Speedo
@@ -112,13 +121,22 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       bool car_on = !((d[0] >> 4) & 1);
       float speed = ( ((d[0]&0xf) << 8) + d[1] ) * 0.1;
       float odo   = ( (d[5] << 16) + (d[6] << 8) + (d[7]) ) * 0.1;
-      StandardMetrics.ms_v_env_on->SetValue(car_on); 
+      if ( (d[0]>>4) != 0xf) // Bits 0xf0 in d0 mean some sleep like state
+        StandardMetrics.ms_v_env_on->SetValue(car_on);
+      else 
+        StandardMetrics.ms_v_env_on->SetValue(false);
       if (speed < 180)
         StandardMetrics.ms_v_pos_speed->SetValue(speed); // speed in km/h
       StandardMetrics.ms_v_pos_odometer->SetValue(odo); // ODO km
-      // d3&d4 is a minute counter,
+      // d3&d4 is a minute counter, Running while charging
       // d2 *0.5 - 40 is outdoor temp
       StandardMetrics.ms_v_env_temp->SetValue( (d[2]-80)*0.5 );
+      break;
+    }
+  case 0x201:
+    { 
+      int temp = d[5] - 40;
+      mt_mb_temperature3->SetValue(temp/2); // Rises with a delay on highway
       break;
     }
   case 0x203: // Wheel speeds
@@ -196,7 +214,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
       mt_mb_temperature1->SetValue(temp/2); // Probably water or 12v battery temp, does not change much on highway 
       break;
     }
-    // 0x2C4 29:18, little endian, GPS 'west'
+    // 0x2C4 29:18, little endian, GPS 'west', bytes 5-6 are North
   case 0x2EF: // 
     {
       int temp = d[4] - 40;
@@ -253,15 +271,18 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
 	StandardMetrics.ms_v_bat_range_est->SetValue((float)range); // km
       if (consumption < 2047)
         mt_mb_consumption_start->SetValue((float)consumption);
+      if ((consumption < 2047) && (range < 2047)) {
+        // Estimate SOC from consumption (since start), and range 
+        StandardMetrics.ms_v_bat_soc->SetValue(100.0*consumption*range/29492);            
+      }
       consumption = (d[2]&0x7)*256 + d[3];
       if (consumption < 2047)
         mt_mb_consumption_reset->SetValue((float)consumption);
-      /* The following metric is strong maybe. */
-      //      StandardMetrics.ms_v_charge_inprogress->SetValue( (bool)((d[5]>>1) & 1) );
       StandardMetrics.ms_v_env_throttle->SetValue( throttle*100/511 );
       break;
     }
-  case 0x37D:
+    // case 0x35C: D3, 0x80 ECO mode, 0x40 ECO+ mode
+  case 0x37D: // 12v current
    {
      int cur = (d[4]&0x3)*256+d[3];
      if (cur & 0x200)
@@ -270,6 +291,7 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
      StandardMetrics.ms_v_bat_12v_current->SetValue( cur * 0.1 );
      break;
     }
+   // 0x386, bits 11-11 could be driver door
   case 0x39F: // Car time now
     {
       // d0 hour
@@ -286,8 +308,8 @@ void OvmsVehicleMercedesB250e::IncomingFrameCan1(CAN_frame_t* p_frame)
     {
       // d[1:0]*0.0368 is speed 
       // d[3:2] 12 bit is something odd 
-      // d[5:4] 12 bit *0.1 is maybe consumption average
-      // d[7:6] 12 bit *0.1 is maybe consumption average
+      // d[5:4] GPS heigh maybe
+      // d[7:6] GPS heigh maybe
       
       float gps_speed = (float)(d[0])*256 + (float)d[1]; // guess
       if (d[0] < 255) { // Update only with feasible results

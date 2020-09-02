@@ -22,7 +22,7 @@ ms_v_env_cooling              Cooling on, in preheat mode (may differ when the c
 ms_v_env_temp                 Environment temperature (guessing, could be some other temp also)
 ms_v_env_throttle             Throttle position (also cruise uses this) - drive mode effect on this is still unknown
 ms_v_vin                      VIN
-ms_v_env_on                   "Ignition" state (drivable), not verified yet
+ms_v_env_on                   "Ignition" state (drivable), not yet verified
 ============================= ============================================
 
 
@@ -50,4 +50,6 @@ xmb.v.forward_g                          0.02                     Forward (longi
 xmb.v.side_g                             0.02                     Turning accelration, range +/- 1.0 of maximum (what ever that is), left is positive side..
 xmb.v.temperature1                       30 deg C                 Unknown temperature measurement
 xmb.v.temperature2                       30 deg C                 Unknown temperature measurement
+xmb.v.temperature3                       30 deg C                 Unknown temperature measurement
+xmb.v.drive_pedal_slow                   15 %                     Filtered throttle pedal.
 ======================================== ======================== ============================================
