@@ -301,9 +301,12 @@ Push notification subscription 0x70 "p"
 
 This message is sent <apptoserver> A". It is used by app to register for push notifications, and is normally at the start of a connection. The <data> is made up of:
 
-<appid>,<pushtype>,<pushkeytype>{,<vehicleid>,<netpass>,<pushkeyvalue>}
+<appid>,<pushtype>,<pushkeytype>,<vehicleid>,<netpass>,<pushkeyvalue>
 
 The server will verify the credentials for each vehicle, and store the required notification information.
+
+Note: As of June 2020, only one vehicleid can be subscribed at a time. If multiple vehicles are
+required, then they should each be subscribed in individual messages.
 
 ----------------------------------------
 Server -> Server Record message 0x52 "R"
@@ -381,9 +384,11 @@ This message is sent <cartoserver> "C", or <servertoapp> "s", and transmits the 
 * Charge ETR for SOC limit (min.)
 * Max ideal range
 * Charge/plug type ID according to OpenChargeMaps.org connectiontypes (see http://api.openchargemap.io/v2/referencedata/)
-* Charge power (kWh)
+* Charge power output (kW)
 * Battery voltage (V)
 * Battery SOH (state of health) (%)
+* Charge power input (kW)
+* Charger efficiency (%)
 
 --------------------------------
 Car update time message 0x53 "T"
@@ -413,6 +418,8 @@ This message is sent <cartoserver> "C" and transmits the last known location of 
 * Battery power level (in kW, negative = charging)
 * Energy used (in Wh)
 * Energy recovered (in Wh)
+* Inverter motor power (kW) (positive = output)
+* Inverter efficiency (%)
 
 ---------------------------------
 Car Capabilities message 0x56 "V"

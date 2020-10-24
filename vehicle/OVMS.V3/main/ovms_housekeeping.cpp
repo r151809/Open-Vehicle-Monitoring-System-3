@@ -36,7 +36,6 @@ static const char *TAG = "housekeeping";
 #include <esp_system.h>
 #include <esp_ota_ops.h>
 #include <esp_heap_caps.h>
-#include <esp_task_wdt.h>
 #include "ovms.h"
 #include "ovms_housekeeping.h"
 #include "ovms_peripherals.h"
@@ -110,6 +109,22 @@ void HousekeepingTicker1( TimerHandle_t timer )
     tick = 0;
     MyEvents.SignalEvent("ticker.3600", NULL);
     }
+
+  time_t rawtime;
+  time ( &rawtime );
+  struct tm* tmu = localtime(&rawtime);
+  if (tmu->tm_sec == 0)
+    {
+    // Start of the minute, so signal a timer event
+    char tev[16];
+    sprintf(tev,"clock.%02d%02d",tmu->tm_hour,tmu->tm_min);
+    MyEvents.SignalEvent(tev, NULL);
+    if ((tmu->tm_hour==0)&&(tmu->tm_min==0))
+      {
+      sprintf(tev,"clock.day%1d",tmu->tm_wday);
+      MyEvents.SignalEvent(tev, NULL);
+      }
+    }
   }
 
 Housekeeping::Housekeeping()
@@ -143,9 +158,6 @@ void Housekeeping::Init(std::string event, void* data)
   tick = 0;
   m_timer1 = xTimerCreate("Housekeep ticker",1000 / portTICK_PERIOD_MS,pdTRUE,this,HousekeepingTicker1);
   xTimerStart(m_timer1, 0);
-
-  ESP_LOGI(TAG, "Initialising WATCHDOG...");
-  esp_task_wdt_init(120, true);
 
   ESP_LOGI(TAG, "Starting PERIPHERALS...");
   MyPeripherals = new Peripherals();

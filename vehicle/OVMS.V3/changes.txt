@@ -1,6 +1,59 @@
 Open Vehicle Monitor System v3 - Change log
 
 ????-??-?? ???  ???????  OTA release
+- Location: add metric for name of current location
+  New metrics:
+    v.p.location        -- Name of current location if defined
+- Nissan Leaf: invert batt current sign to match standard metrics definition, populate charger power/efficiency
+- New standard metrics for total (life time) energy and coulomb
+- Renault Twizy: support additional OBD/UDS request types & arguments on "xrt obd request"
+- VW e-UP T26A: add climate control and charging detection
+- New vehicle: VW e-Up via OBD-II Port (VWUP.OBD)
+- New vehicle: MG ZS EV via OBD-II Port (MGEV)
+
+2020-09-02 MWJ  3.2.015  OTA release
+- Notify: add explicit channel exclusion config syntax
+    config set notify <subtype> <…>
+    <…> options are now:
+     a) explicit inclusion: e.g. 'ovmsv2,ovmsv3' (only enable these)
+     b) explicit exclusion: e.g. '*,-ovmsv2,-ovmsv3' (only disable these)
+     '-' to disable all, empty/'*' to enable all
+- Renault Twizy: add eDriver/Virtual BMS data to RT-BAT-C & RT-BAT-P logs
+- Nissan Leaf: fixes for issues related to using EV CAN bus (was CAR CAN prior to 3.2.014)
+- Wifi client: support static IP configuration, manually set or automatically applied by SSID
+  New commands:
+    wifi ip static [<ip> <subnet> <gateway>]
+    wifi ip dhcp
+  New configs:
+    wifi.ssid "<ssid>.ovms.staticip" "<ip>,<subnet>,<gateway>"
+
+2020-08-04 MWJ  3.2.014  OTA release
+- Renault Twizy: support VirtualBMS & eDriver BMS (3 cell temperature sensors)
+  New metrics:
+    xrt.bms.type        -- 0=VirtualBMS, 1=eDriver, 7=Standard
+    xrt.bms.state1      -- BMS specific main state
+    xrt.bms.state2      -- BMS specific aux state
+    xrt.bms.error       -- BMS specific error status
+    xrt.bms.temp        -- internal BMS temperature
+    xrt.bms.balancing   -- Cell balancing status
+- Wifi: scanning apclient mode, network selection dialog in wizard & wifi config,
+    scan support in all modes, fixed network selection by signal strength
+    (possibly also fixes issue #387)
+  New/updated commands:
+    wifi scan           -- can now be issued in any mode
+    wifi scan -j        -- output scan result as JSON object (for web UI)
+    wifi reconnect      -- request a client reconnect cycle
+    wifi mode apclient  -- now accepts empty stassid & optional stabssid
+- #377 Make some metrics (e.g. v.b.soc) persistent across warm reboots
+  This includes crashes and firmware updates
+- Tesla Roadster support for TPMS
+- Tesla Model S support for Baolong TPMS
+- General stability improvements related to watchdog and task timeouts
+
+2020-05-31 MWJ  3.2.013 OTA release
+- TLS Trusted CA update (for addtrust/usertrust)
+- TPMS subsystem, and support for K-Line TPMS ECU in Tesla Roadster
+- #374 The server.v2 config section should be read/write
 
 2020-04-22 MWJ  3.2.012 OTA release
 - #357 tpms rear left temperature incorrect in v2 protocol

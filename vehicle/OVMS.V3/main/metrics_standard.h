@@ -53,6 +53,7 @@
 #define MS_N_PROVIDER               "m.net.provider"
 #define MS_N_MDM_ICCID              "m.net.mdm.iccid"
 #define MS_N_MDM_MODEL              "m.net.mdm.model"
+#define MS_N_MDM_NETREG             "m.net.mdm.netreg"
 #define MS_N_MDM_NETWORK            "m.net.mdm.network"
 #define MS_N_MDM_SQ                 "m.net.mdm.sq"
 #define MS_N_WIFI_NETWORK           "m.net.wifi.network"
@@ -80,11 +81,15 @@
 #define MS_V_BAT_VOLTAGE            "v.b.voltage"
 #define MS_V_BAT_CURRENT            "v.b.current"
 #define MS_V_BAT_COULOMB_USED       "v.b.coulomb.used"
+#define MS_V_BAT_COULOMB_USED_TOTAL "v.b.coulomb.used.total"
 #define MS_V_BAT_COULOMB_RECD       "v.b.coulomb.recd"
+#define MS_V_BAT_COULOMB_RECD_TOTAL "v.b.coulomb.recd.total"
 #define MS_V_BAT_POWER              "v.b.power"
 #define MS_V_BAT_CONSUMPTION        "v.b.consumption"
 #define MS_V_BAT_ENERGY_USED        "v.b.energy.used"
+#define MS_V_BAT_ENERGY_USED_TOTAL  "v.b.energy.used.total"
 #define MS_V_BAT_ENERGY_RECD        "v.b.energy.recd"
+#define MS_V_BAT_ENERGY_RECD_TOTAL  "v.b.energy.recd.total"
 #define MS_V_BAT_RANGE_FULL         "v.b.range.full"
 #define MS_V_BAT_RANGE_IDEAL        "v.b.range.ideal"
 #define MS_V_BAT_RANGE_EST          "v.b.range.est"
@@ -121,6 +126,8 @@
 
 #define MS_V_CHARGE_VOLTAGE         "v.c.voltage"
 #define MS_V_CHARGE_CURRENT         "v.c.current"
+#define MS_V_CHARGE_POWER           "v.c.power"
+#define MS_V_CHARGE_EFFICIENCY      "v.c.efficiency"
 #define MS_V_CHARGE_CLIMIT          "v.c.climit"
 #define MS_V_CHARGE_TIME            "v.c.time"
 #define MS_V_CHARGE_KWH             "v.c.kwh"
@@ -140,6 +147,8 @@
 #define MS_V_CHARGE_TEMP            "v.c.temp"
 
 #define MS_V_INV_TEMP               "v.i.temp"
+#define MS_V_INV_POWER              "v.i.power"
+#define MS_V_INV_EFFICIENCY         "v.i.efficiency"
 
 #define MS_V_MOT_RPM                "v.m.rpm"
 #define MS_V_MOT_TEMP               "v.m.temp"
@@ -187,6 +196,7 @@
 #define MS_V_POS_SATCOUNT           "v.p.satcount"
 #define MS_V_POS_LATITUDE           "v.p.latitude"
 #define MS_V_POS_LONGITUDE          "v.p.longitude"
+#define MS_V_POS_LOCATION           "v.p.location"
 #define MS_V_POS_DIRECTION          "v.p.direction"
 #define MS_V_POS_ALTITUDE           "v.p.altitude"
 #define MS_V_POS_SPEED              "v.p.speed"
@@ -224,6 +234,7 @@ class MetricsStandard
     OvmsMetricString* ms_m_net_provider;            // Network provider name
     OvmsMetricString* ms_m_net_wifi_network;        // Wifi network SSID
     OvmsMetricFloat*  ms_m_net_wifi_sq;             // Wifi network signal quality [dbm]
+    OvmsMetricString* ms_m_net_mdm_netreg;          // Modem network registration state
     OvmsMetricString* ms_m_net_mdm_network;         // Modem network operator
     OvmsMetricFloat*  ms_m_net_mdm_sq;              // Modem network signal quality [dbm]
     OvmsMetricString* ms_m_net_mdm_iccid;
@@ -249,13 +260,17 @@ class MetricsStandard
     OvmsMetricFloat*  ms_v_bat_cac;                 // Calculated capacity [Ah]
     OvmsMetricString* ms_v_bat_health;              // General textual description of battery health
     OvmsMetricFloat*  ms_v_bat_voltage;             // Main battery momentary voltage [V]
-    OvmsMetricFloat*  ms_v_bat_current;             // Main battery momentary current [A]
+    OvmsMetricFloat*  ms_v_bat_current;             // Main battery momentary current [A] (output=positive)
     OvmsMetricFloat*  ms_v_bat_coulomb_used;        // Main battery coulomb used on trip [Ah]
+    OvmsMetricFloat*  ms_v_bat_coulomb_used_total;  // Main battery coulomb used total (life time) [Ah]
     OvmsMetricFloat*  ms_v_bat_coulomb_recd;        // Main battery coulomb recovered on trip [Ah]
-    OvmsMetricFloat*  ms_v_bat_power;               // Main battery momentary power [kW]
+    OvmsMetricFloat*  ms_v_bat_coulomb_recd_total;  // Main battery coulomb recovered total (life time) [Ah]
+    OvmsMetricFloat*  ms_v_bat_power;               // Main battery momentary power [kW] (output=positive)
     OvmsMetricFloat*  ms_v_bat_consumption;         // Main battery momentary consumption [Wh/km]
     OvmsMetricFloat*  ms_v_bat_energy_used;         // Main battery energy used on trip [kWh]
+    OvmsMetricFloat*  ms_v_bat_energy_used_total;   // Main battery energy used total (life time) [kWh]
     OvmsMetricFloat*  ms_v_bat_energy_recd;         // Main battery energy recovered on trip [kWh]
+    OvmsMetricFloat*  ms_v_bat_energy_recd_total;   // Main battery energy recovered total (life time) [kWh]
     OvmsMetricFloat*  ms_v_bat_range_full;          // Ideal range at 100% SOC & current conditions [km]
     OvmsMetricFloat*  ms_v_bat_range_ideal;         // Ideal range [km]
     OvmsMetricFloat*  ms_v_bat_range_est;           // Estimated range [km]
@@ -296,6 +311,8 @@ class MetricsStandard
     OvmsMetricVector<short>* ms_v_bat_cell_talert;        // Cell temperature deviation alert level [0=normal, 1=warning, 2=alert]
 
     OvmsMetricFloat*  ms_v_charge_voltage;          // Momentary charger supply voltage [V]
+    OvmsMetricFloat*  ms_v_charge_power;            // Momentary charger input power [kW]
+    OvmsMetricFloat*  ms_v_charge_efficiency;       // Momentary charger efficiency [%]
     OvmsMetricFloat*  ms_v_charge_current;          // Momentary charger output current [A]
     OvmsMetricFloat*  ms_v_charge_climit;           // Maximum charger output current [A]
     OvmsMetricInt*    ms_v_charge_time;             // Duration of running charge [sec]
@@ -316,6 +333,8 @@ class MetricsStandard
     OvmsMetricFloat*  ms_v_charge_temp;             // Charger temperature [°C]
 
     OvmsMetricFloat*  ms_v_inv_temp;                // Inverter temperature [°C]
+    OvmsMetricFloat*  ms_v_inv_power;               // Momentary inverter motor power [kW] (output=positive)
+    OvmsMetricFloat*  ms_v_inv_efficiency;          // Momentary inverter efficiency [%]
 
     OvmsMetricInt*    ms_v_mot_rpm;                 // Motor speed (RPM)
     OvmsMetricFloat*  ms_v_mot_temp;                // Motor temperature [°C]
@@ -362,6 +381,7 @@ class MetricsStandard
     OvmsMetricInt*    ms_v_pos_satcount;
     OvmsMetricFloat*  ms_v_pos_latitude;
     OvmsMetricFloat*  ms_v_pos_longitude;
+    OvmsMetricString* ms_v_pos_location;            // Name of current location if defined
     OvmsMetricFloat*  ms_v_pos_direction;
     OvmsMetricFloat*  ms_v_pos_altitude;
     OvmsMetricFloat*  ms_v_pos_speed;               // Vehicle speed [kph]

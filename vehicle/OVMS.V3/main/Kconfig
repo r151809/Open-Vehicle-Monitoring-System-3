@@ -6,7 +6,7 @@ menuconfig OVMS
 
 config OVMS_VERSION_TAG
     string "A tag to describe the current build version"
-    default main
+    default "main"
     depends on OVMS
     help
         Custom builds should change this tag to describe themselves
@@ -208,10 +208,11 @@ config OVMS_SC_JAVASCRIPT_DUKTAPE_STACK
 
 config OVMS_SC_JAVASCRIPT_DUKTAPE_QUEUE_SIZE
     int "JavaScript (DukTape) task queue size"
-    default 20
+    default 40
     depends on OVMS_SC_JAVASCRIPT_DUKTAPE
     help
         The size of the DukTape queue (for outstanding requests).
+        Should be >= OVMS_HW_EVENT_QUEUE_SIZE
 
 config OVMS_SC_JAVASCRIPT_DUKTAPE_PRIORITY
     int "JavaScript (DukTape) task priority"
@@ -371,12 +372,40 @@ config OVMS_VEHICLE_VWEUP
     help
         Enable to include support for VW e-Up vehicle.
 
+config OVMS_VEHICLE_VWEUP_OBD
+    bool "Include support for VW e-Up vehicle via OBD2"
+    default y
+    depends on OVMS
+    help
+        Enable to include support for VW e-Up vehicle via OBD2.
+
 config OVMS_VEHICLE_MERCEDESB250E
     bool "Include support for Mercedes-Benz B250E (W242) vehicle"
     default n
     depends on OVMS
     help
         Enable to include support for Mercedes-Benz B250E (W242) vehicle.
+
+config OVMS_VEHICLE_CADILLAC_C2_CTS
+    bool "Include support for Cadillac 2nd gen CTS vehicle"
+    default n
+    depends on OVMS
+    help
+        Enable to include support for Cadillac 2nd gen CTS vehicle.
+
+config OVMS_VEHICLE_CHEVROLET_C6_CORVETTE
+    bool "Include support for Chevrolet C6 Corvette vehicle"
+    default n
+    depends on OVMS
+    help
+        Enable to include support for Chevrolet C6 Corvette vehicle.
+
+config OVMS_VEHICLE_MG_EV
+    bool "Include support for MG ZS EV vehicles"
+    default y
+    depends on OVMS
+    help
+        Enable to include support for MG ZS EV vehicles.
 
 config OVMS_VEHICLE_RXTASK_STACK
     int "Stack size for vehicle RX task"
@@ -539,6 +568,13 @@ config OVMS_COMP_PUSHOVER
     help
         Enable to include support for Pushover. 
 
+config OVMS_COMP_TPMS
+    bool "Include support for TPMS tyre sets"
+    default y
+    depends on OVMS
+    help
+        Enable to include support for TPMS tyre sets
+
 config OVMS_COMP_MODEM_SIMCOM
     bool "Include support for SIMCOM modems"
     default y
@@ -566,6 +602,20 @@ config OVMS_COMP_RE_TOOLS
     depends on OVMS
     help
         Enable to include support for Reverse Engineering tools
+
+config OVMS_COMP_RE_TOOLS_PID
+    bool "Include support for ECU PID scanning"
+    default y
+    depends on OVMS
+    help
+        Enable to include research module for scanning an ECU for PIDs.
+
+config OVMS_COMP_RE_TOOLS_TESTERPRESENT
+    bool "Include support for ECU tester present signalling"
+    default y
+    depends on OVMS
+    help
+        Enable to include research module for sending tester present to an ECU.
 
 config OVMS_COMP_EDITOR
     bool "Include support for Simple file editor"

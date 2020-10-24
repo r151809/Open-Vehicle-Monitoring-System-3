@@ -41,9 +41,14 @@
 #include "ovms_config.h"
 #include "ovms_metrics.h"
 #include "ovms_command.h"
+#include "ovms_mutex.h"
+#include "ovms_semaphore.h"
 #ifdef CONFIG_OVMS_COMP_WEBSERVER
 #include "ovms_webserver.h"
 #endif
+
+#define CAN_BYTE(b)     d[b]
+#define CAN_UINT(b)     (((UINT)CAN_BYTE(b+1) << 8) | CAN_BYTE(b))
 
 using namespace std;
 
@@ -58,6 +63,7 @@ class OvmsVehicleSmartED : public OvmsVehicle
     void IncomingFrameCan1(CAN_frame_t* p_frame);
     void IncomingFrameCan2(CAN_frame_t* p_frame);
     void IncomingPollReply(canbus* bus, uint16_t type, uint16_t pid, uint8_t* data, uint8_t length, uint16_t mlremain);
+    void IncomingPollError(canbus* bus, uint16_t type, uint16_t pid, uint16_t code);
     char m_vin[18];
 
   public:
@@ -68,7 +74,8 @@ class OvmsVehicleSmartED : public OvmsVehicle
     static void WebCfgBattery(PageEntry_t& p, PageContext_t& c);
     static void WebCfgCommands(PageEntry_t& p, PageContext_t& c);
     static void WebCfgNotify(PageEntry_t& p, PageContext_t& c);
-    static void BmsCellMonitor(PageEntry_t& p, PageContext_t& c);
+    static void WebCfgBmsCellMonitor(PageEntry_t& p, PageContext_t& c);
+    static void WebCfgBmsCellCapacity(PageEntry_t& p, PageContext_t& c);
     static void WebCfgEco(PageEntry_t& p, PageContext_t& c);
     void ConfigChanged(OvmsConfigParam* param);
     bool SetFeature(int key, const char* value);
@@ -108,6 +115,8 @@ class OvmsVehicleSmartED : public OvmsVehicle
     void NotifyTrip();
     void NotifyValetEnabled();
     void NotifyValetDisabled();
+    void NotifyValetHood();
+    void NotifyValetTrunk();
     void SaveStatus();
     void RestoreStatus();
     void HandleCharging();
@@ -281,6 +290,7 @@ class OvmsVehicleSmartED : public OvmsVehicle
     void BmsSetCellArrangementCapacity(int readings, int readingspermodule);
     void BmsSetCellCapacity(int index, float value);
     void BmsRestartCellCapacitys();
+    void BmsResetCellStats();
 
   public:
     void BmsResetCellCapacitys();
@@ -294,8 +304,24 @@ class OvmsVehicleSmartED : public OvmsVehicle
     void ShutDown();
     int m_shutdown_ticker;
   
+  public:
+    int ObdRequest(uint16_t txid, uint16_t rxid, uint32_t request, string& response, int timeout_ms=3000);
+    static void shell_obd_request(int verbosity, OvmsWriter* writer, OvmsCommand* cmd, int argc, const char* const* argv);
+    static void shell_obd_request_volts(int verbosity, OvmsWriter* writer, OvmsCommand* cmd, int argc, const char* const* argv);
+  
+  protected:
+    string              smarted_obd_rxbuf;
+    uint16_t            smarted_obd_rxerr;
+    OvmsMutex           smarted_obd_request;
+    OvmsSemaphore       smarted_obd_rxwait;
+  
   protected:
     void TempPoll();
+  
+  // charging 12V
+  protected:
+    void HandleCharging12v();
+    unsigned int m_charging_timer;
 };
 
 #endif //#ifndef __VEHICLE_SMARTED_H__

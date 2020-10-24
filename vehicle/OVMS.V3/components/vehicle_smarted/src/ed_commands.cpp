@@ -141,6 +141,102 @@ void OvmsVehicleSmartED::xse_RPTdata(int verbosity, OvmsWriter* writer, OvmsComm
   smart->printRPTdata(verbosity, writer);
 }
 
+void OvmsVehicleSmartED::shell_obd_request(int verbosity, OvmsWriter* writer, OvmsCommand* cmd, int argc, const char* const* argv)
+{
+  OvmsVehicleSmartED* smart = GetInstance(writer);
+  if (!smart)
+    return;
+
+  uint16_t txid = 0, rxid = 0;
+  uint32_t req = 0;
+  string response;
+
+  // parse args:
+  
+  if (argc < 3) {
+    writer->puts("ERROR: too few args, need: txid rxid request");
+    return;
+  }
+  
+  txid = strtol(argv[0], NULL, 16);
+  rxid = strtol(argv[1], NULL, 16);
+  req = strtol(argv[2], NULL, 16);
+
+  // validate request:
+  uint8_t mode = (req <= 0xffff) ? ((req & 0xff00) >> 8) : ((req & 0xff0000) >> 16);
+  if (mode != 0x01 && mode != 0x02 && mode != 0x09 &&
+      mode != 0x10 && mode != 0x1A && mode != 0x21 && mode != 0x22) {
+    writer->puts("ERROR: mode must be one of: 01, 02, 09, 10, 1A, 21 or 22");
+    return;
+  } else if (req > 0xffffff) {
+    writer->puts("ERROR: PID must be 8 or 16 bit");
+    return;
+  }
+
+  // execute request:
+  int err = smart->ObdRequest(txid, rxid, req, response);
+  if (err == -1) {
+    writer->puts("ERROR: timeout waiting for response");
+    return;
+  } else if (err) {
+    writer->printf("ERROR: request failed with response error code %02X\n", err);
+    return;
+  }
+
+  // output response as hex dump:
+  writer->puts("Response:");
+  char *buf = NULL;
+  size_t rlen = response.size(), offset = 0;
+  do {
+    rlen = FormatHexDump(&buf, response.data() + offset, rlen, 16);
+    offset += 16;
+    writer->puts(buf ? buf : "-");
+  } while (rlen);
+  if (buf)
+    free(buf);
+}
+
+void OvmsVehicleSmartED::shell_obd_request_volts(int verbosity, OvmsWriter* writer, OvmsCommand* cmd, int argc, const char* const* argv)
+{
+  OvmsVehicleSmartED* smart = GetInstance(writer);
+  if (!smart)
+    return;
+
+  uint16_t txid = 0, rxid = 0;
+  uint32_t req = 0;
+  string response;
+
+  // parse args:
+
+  txid = 0x7E7;
+  rxid = 0x7EF;
+  req = 0x220208;
+
+  // validate request:
+  uint8_t mode = (req <= 0xffff) ? ((req & 0xff00) >> 8) : ((req & 0xff0000) >> 16);
+  if (mode != 0x01 && mode != 0x02 && mode != 0x09 &&
+      mode != 0x10 && mode != 0x1A && mode != 0x21 && mode != 0x22) {
+    writer->puts("ERROR: mode must be one of: 01, 02, 09, 10, 1A, 21 or 22");
+    return;
+  } else if (req > 0xffffff) {
+    writer->puts("ERROR: PID must be 8 or 16 bit");
+    return;
+  }
+
+  // execute request:
+  int err = smart->ObdRequest(txid, rxid, req, response);
+  if (err == -1) {
+    writer->puts("ERROR: timeout waiting for response");
+    return;
+  } else if (err) {
+    writer->printf("ERROR: request failed with response error code %02X\n", err);
+    return;
+  }
+
+  // output:
+  writer->puts("OK");
+}
+
 void OvmsVehicleSmartED::TempPoll() {
   vTaskDelay(300 / portTICK_PERIOD_MS);
   uint8_t data[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -154,11 +250,11 @@ void OvmsVehicleSmartED::TempPoll() {
   obd->WriteStandard(0x7A2, 8, data);
   vTaskDelay(50 / portTICK_PERIOD_MS);
   
-  data[0] = 0x02;
-  data[1] = 0xe3;
-  data[2] = 0x01;
-  obd->WriteStandard(0x7A2, 8, data);
-  vTaskDelay(50 / portTICK_PERIOD_MS);
+  // data[0] = 0x02;
+  // data[1] = 0xe3;
+  // data[2] = 0x01;
+  // obd->WriteStandard(0x7A2, 8, data);
+  // vTaskDelay(50 / portTICK_PERIOD_MS);
   
   data[0] = 0x02;
   data[1] = 0x21;
@@ -172,11 +268,11 @@ void OvmsVehicleSmartED::TempPoll() {
   obd->WriteStandard(0x7A2, 8, data);
   vTaskDelay(50 / portTICK_PERIOD_MS);
   
-  data[0] = 0x02;
-  data[1] = 0xe3;
-  data[2] = 0x01;
-  obd->WriteStandard(0x7A2, 8, data);
-  vTaskDelay(50 / portTICK_PERIOD_MS);
+  // data[0] = 0x02;
+  // data[1] = 0xe3;
+  // data[2] = 0x01;
+  // obd->WriteStandard(0x7A2, 8, data);
+  // vTaskDelay(50 / portTICK_PERIOD_MS);
   
   data[0] = 0x02;
   data[1] = 0x10;
@@ -455,19 +551,23 @@ OvmsVehicle::vehicle_command_t OvmsVehicleSmartED::CommandStat(int verbosity, Ov
 
       int duration_full = StdMetrics.ms_v_charge_duration_full->AsInt();
       if (duration_full > 0)
-        writer->printf("Full: %d mins\n", duration_full);
+        writer->printf("Full [hh:mm]: %02d:%02d\n", 
+          StdMetrics.ms_v_charge_duration_full->AsInt(0, Hours), 
+          StdMetrics.ms_v_charge_duration_full->AsInt(0, Minutes)-(StdMetrics.ms_v_charge_duration_full->AsInt(0, Hours)*60));
 
       int duration_soc = StdMetrics.ms_v_charge_duration_soc->AsInt();
       if (duration_soc > 0)
-        writer->printf("%s: %d mins\n",
+        writer->printf("%s [hh:mm]: %02d:%02d\n",
           (char*) StdMetrics.ms_v_charge_limit_soc->AsUnitString("SOC", Native, 0).c_str(),
-          duration_soc);
+          StdMetrics.ms_v_charge_duration_soc->AsInt(0, Hours), 
+          StdMetrics.ms_v_charge_duration_soc->AsInt(0, Minutes)-(StdMetrics.ms_v_charge_duration_soc->AsInt(0, Hours)*60));
 
       int duration_range = StdMetrics.ms_v_charge_duration_range->AsInt();
       if (duration_range > 0)
-        writer->printf("%s: %d mins\n",
+        writer->printf("%s [hh:mm]: %02d:%02d\n",
           (char*) StdMetrics.ms_v_charge_limit_range->AsUnitString("Range", rangeUnit, 0).c_str(),
-          duration_range);
+          StdMetrics.ms_v_charge_duration_range->AsInt(0, Hours), 
+          StdMetrics.ms_v_charge_duration_range->AsInt(0, Minutes)-(StdMetrics.ms_v_charge_duration_range->AsInt(0, Hours)*60));
       }
     }
   else
@@ -538,4 +638,12 @@ void OvmsVehicleSmartED::NotifyValetEnabled() {
 
 void OvmsVehicleSmartED::NotifyValetDisabled() {
   // MyNotify.NotifyString("info", "valet.disabled", "Ignition off");
+}
+
+void OvmsVehicleSmartED::NotifyValetHood() {
+  // MyNotify.NotifyString("alert", "valet.hood", "Vehicle hood opened while in valet mode");
+}
+
+void OvmsVehicleSmartED::NotifyValetTrunk() {
+  // MyNotify.NotifyString("alert", "valet.trunk", "Vehicle trunk opened while in valet mode");
 }
